@@ -89,6 +89,7 @@ function createWindow () {
   ipcMain.on("get-subs", (event) => {
     if(studioWindow.webContents.getURL().includes("https://studio.youtube.com/channel/"))
     {
+      console.log(5)
       studioWindow.webContents.executeJavaScript(`
         try{
           let subs = document.querySelectorAll(".subscribers-title")[0].nextElementSibling.innerText;
@@ -97,6 +98,7 @@ function createWindow () {
             "subs": subs,
             "channelId": channelId
           });
+          window.location.reload();
         }catch(e){}
       `);
     };
