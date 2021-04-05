@@ -4,7 +4,11 @@
     <div class="line" style="margin-left: 0">
       <input placeholder="95mM72TaFsc" type="text" style="margin-left: 0;" v-model="id" />
     </div>
-    <div style="display:flex; margin-top: 22px">
+    <div style="display:flex;align-items:center;margin-top: 6px;">
+      <input type="checkbox" id="lightmode" :checked="lightMode">
+      <label for="lightmode">Светлая тема</label>
+    </div>
+    <div style="display:flex; margin-top: 0px">
       <input type="button" style="margin-right: 2px" @click="widget" value="Виджет" />
       <input type="button" style="margin-left: 2px" @click="yt" value="Студия" />
     </div>
@@ -18,11 +22,13 @@ import { ipcRenderer } from 'electron';
 export default {
   name: "settings",
   data: () => ({
-    id: null
+    id: null,
+    lightMode: localStorage.getItem("lightMode") == 'true'
   }),
   methods: {
     save() {
       localStorage.setItem("id", this.id);
+      localStorage.setItem("lightMode", document.querySelector("#lightmode").checked);
 
       let router = this.$router;
       router.push({ path: "/" });
@@ -35,7 +41,7 @@ export default {
     }
   },
   mounted() {
-      this.id = localStorage.getItem("id") || ""
+    this.id = localStorage.getItem("id") || ""
   }
 };
 </script>
@@ -44,6 +50,7 @@ export default {
 #wrapper {
   padding: 0 8px;
   padding-bottom: 16px;
+  height: 138px;
 }
 .hint {
   color: rgb(140, 140, 140);
@@ -71,8 +78,8 @@ input[type="text"] {
   outline: none;
   background: transparent;
   box-shadow: inset 0px 0px 0px 2px white;
-  padding: 0px 6px;
   color: white;
+  padding: 0px 6px;
   border-radius: 4px;
   font-family: "Fira Sans";
   font-size: 12px;
@@ -90,9 +97,9 @@ input[type="button"] {
   height: 26px;
   border: none;
   outline: none;
-  box-shadow: inset 0px 0px 0px 2px white;
   border-radius: 2px;
   margin-top: 6px;
+  box-shadow: inset 0px 0px 0px 2px white;
   background: transparent;
   color: white;
   cursor: pointer;
@@ -101,5 +108,10 @@ input[type="button"] {
 }
 input[type="button"]:hover {
   background: rgb(60, 60, 60);
+}
+label {
+  font-size: 12px;
+  color: white;
+  margin-left: 6px;
 }
 </style>

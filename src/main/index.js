@@ -1,36 +1,40 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
-import { autoUpdater } from 'electron-updater'
+import { app, BrowserWindow, ipcMain, session } from "electron";
+import { autoUpdater } from "electron-updater";
+import fetch from "node-fetch";
 
-const expressapp = require('express')()
-const http = require('http').createServer(expressapp);
-const io = require('socket.io')(http)
+const expressapp = require("express")();
+const http = require("http").createServer(expressapp);
+const io = require("socket.io")(http);
 var subs = 0;
 
-if (process.env.NODE_ENV !== 'development') {
-  global.__static = require('path').join(__dirname, '/static').replace(/\\/g, '\\\\')
+if (process.env.NODE_ENV !== "development") {
+  global.__static = require("path")
+    .join(__dirname, "/static")
+    .replace(/\\/g, "\\\\");
 }
 
-let mainWindow
-let studioWindow
-const winURL = process.env.NODE_ENV === 'development'
-  ? `http://localhost:9080`
-  : `file://${__dirname}/index.html`
+let mainWindow;
+let studioWindow;
+const winURL =
+  process.env.NODE_ENV === "development"
+    ? `http://localhost:9080`
+    : `file://${__dirname}/index.html`;
 
-function createWindow () {
+function createWindow() {
   mainWindow = new BrowserWindow({
     width: 180,
-    height: 172,
+    height: 175,
     useContentSize: true,
     webPreferences: {
       nodeIntegration: true,
-      webSecurity: false
+      webSecurity: false,
     },
     autoHideMenuBar: true,
     resizable: false,
-    frame: false
-  })
+    frame: false,
+  });
 
-  mainWindow.loadURL(winURL)
+  mainWindow.loadURL(winURL);
 
   studioWindow = new BrowserWindow({
     width: 800,
@@ -41,43 +45,90 @@ function createWindow () {
     show: false,
     webPreferences: {
       experimentalFeatures: true,
-      nodeIntegration: true
-    }
+      nodeIntegration: true,
+    },
   });
 
   studioWindow.type = "studio";
-  studioWindow.loadURL("https://studio.youtube.com", {
-    userAgent: 'Chrome'
-  });
+  studioWindow.loadURL(
+    "https://studio.youtube.com/channel/CHANNEL_ID/analytics/tab-overview/period-default",
+    {
+      userAgent: "Chrome",
+    }
+  );
 
   studioWindow.on("close", (e) => {
     e.preventDefault();
     studioWindow.hide();
   });
-  
-  ipcMain.on("check-updates", (event, args) => {
-    if (process.env.NODE_ENV === 'production')
+
+  let getSubsDetails = {};
+
+  session.defaultSession.webRequest.onBeforeSendHeaders(
     {
+      urls: [
+        "https://studio.youtube.com/youtubei/v1/analytics_data/join?alt=json&key=*",
+      ],
+    },
+    (details, callback) => {
+      if (details.requestHeaders && details.uploadData) {
+        callback(details);
+
+        session.defaultSession.cookies
+          .get({
+            url:
+              "https://studio.youtube.com/youtubei/v1/analytics_data/join?alt=json&key=*",
+          })
+          .then((cookies) => {
+            getSubsDetails.url = details.url;
+            getSubsDetails.header = details.requestHeaders;
+            getSubsDetails.body = Array.from(
+              details.uploadData
+            )[0].bytes.toString();
+            
+            let cookiesString = "";
+            cookies.forEach(cookie => {
+              cookiesString += `${cookie.name}=${cookie.value}; `;
+            });
+            
+            getSubsDetails.cookies = cookiesString;
+
+            mainWindow.webContents.send("subs-auth-data", getSubsDetails);
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      }
+    }
+  );
+
+  ipcMain.on("check-updates", (event, args) => {
+    if (process.env.NODE_ENV === "production") {
       autoUpdater.checkForUpdatesAndNotify();
 
-      autoUpdater.on('update-not-available', () => {
+      autoUpdater.on("update-not-available", () => {
         event.reply("no-updates");
         autoUpdater.removeAllListeners();
       });
 
-      autoUpdater.on('update-available', () => {
+      autoUpdater.on("update-available", () => {
         event.reply("new-update");
         autoUpdater.removeAllListeners();
       });
 
-      autoUpdater.on('download-progress', (e) => {
+      autoUpdater.on("download-progress", (e) => {
         mainWindow.setProgressBar(e.percent / 100);
-      })
-    
-      autoUpdater.on('update-downloaded', () => {
+      });
+
+      autoUpdater.on("update-downloaded", () => {
         autoUpdater.quitAndInstall();
       });
-    };
+    }
+  });
+
+  ipcMain.on("update-subs", (e, newSubs) => {
+    subs = newSubs;
+    io.emit("new_data_subs", subs);
   });
 
   ipcMain.on("dashboard", (event, args) => {
@@ -86,57 +137,46 @@ function createWindow () {
     io.emit("new_data_subs", subs);
   });
 
-  ipcMain.on("get-subs", (event) => {
-    if(studioWindow.webContents.getURL().includes("https://studio.youtube.com/channel/"))
-    {
-      console.log(5)
-      studioWindow.webContents.executeJavaScript(`
-        try{
-          let subs = document.querySelectorAll(".subscribers-title")[0].nextElementSibling.innerText;
-          let channelId = document.body.innerHTML.match(/\\/channel\\/([^\\s\\/"]*)/)[1];
-          require('electron').ipcRenderer.send('dashboard', {
-            "subs": subs,
-            "channelId": channelId
-          });
-          window.location.reload();
-        }catch(e){}
-      `);
-    };
-  });
-
   ipcMain.on("show-studio", () => {
     studioWindow.show();
   });
 
-  mainWindow.on('closed', () => {
+  mainWindow.on("closed", () => {
     ipcMain.removeAllListeners();
     mainWindow = null;
     app.exit();
-  })
+  });
 }
 
-app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors');
+app.commandLine.appendSwitch("disable-features", "OutOfBlinkCors");
 
-app.on('ready', createWindow)
+app.on("ready", () => {
+  session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    details.requestHeaders["User-Agent"] = "Chrome";
+    callback({ cancel: false, requestHeaders: details.requestHeaders });
+  });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
-
-app.on('activate', () => {
-  if (mainWindow === null) {
-    createWindow()
-  }
-})
-
-expressapp.get('/', function(req, res){
-  res.redirect("https://hlspeedrun.com/ytstats/");
+  createWindow();
 });
 
-io.on('connection', function(socket){
-  socket.emit('new_data_subs', subs);
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
+});
+
+app.on("activate", () => {
+  if (mainWindow === null) {
+    createWindow();
+  }
+});
+
+expressapp.get("/", function(req, res) {
+  res.redirect("https://hlsr.pro/ytstats/");
+});
+
+io.on("connection", function(socket) {
+  socket.emit("new_data_subs", subs);
 });
 
 http.listen(3000);
