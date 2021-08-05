@@ -27,7 +27,9 @@ function createWindow() {
     useContentSize: true,
     webPreferences: {
       nodeIntegration: true,
-      webSecurity: false,
+      contextIsolation: false,
+      enableRemoteModule: true,
+      webSecurity: false
     },
     autoHideMenuBar: true,
     resizable: false,
@@ -44,8 +46,10 @@ function createWindow() {
     autoHideMenuBar: true,
     show: false,
     webPreferences: {
-      experimentalFeatures: true,
       nodeIntegration: true,
+      contextIsolation: false,
+      enableRemoteModule: true,
+      webSecurity: false
     },
   });
 
@@ -53,7 +57,8 @@ function createWindow() {
   studioWindow.loadURL(
     "https://studio.youtube.com/channel/CHANNEL_ID/analytics/tab-overview/period-default",
     {
-      userAgent: "Chrome",
+      userAgent:
+        "Chrome",
     }
   );
 
@@ -85,12 +90,12 @@ function createWindow() {
             getSubsDetails.body = Array.from(
               details.uploadData
             )[0].bytes.toString();
-            
+
             let cookiesString = "";
-            cookies.forEach(cookie => {
+            cookies.forEach((cookie) => {
               cookiesString += `${cookie.name}=${cookie.value}; `;
             });
-            
+
             getSubsDetails.cookies = cookiesString;
 
             mainWindow.webContents.send("subs-auth-data", getSubsDetails);
@@ -152,7 +157,8 @@ app.commandLine.appendSwitch("disable-features", "OutOfBlinkCors");
 
 app.on("ready", () => {
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
-    details.requestHeaders["User-Agent"] = "Chrome";
+    details.requestHeaders["User-Agent"] =
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_5_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36";
     callback({ cancel: false, requestHeaders: details.requestHeaders });
   });
 
