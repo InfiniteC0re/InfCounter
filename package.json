@@ -1,13 +1,13 @@
 {
   "name": "infcounter",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "author": "InfiniteC0re",
   "description": "",
   "license": null,
   "main": "./dist/electron/main.js",
   "scripts": {
-    "build": "node .electron-vue/build.js && electron-builder --x64 --ia32",
-    "deploy": "node .electron-vue/build.js && electron-builder --publish always --x64 --ia32",
+    "build": "node .electron-vue/build.js && electron-builder --ia32",
+    "deploy": "node .electron-vue/build.js && electron-builder --publish always --ia32",
     "build:dir": "node .electron-vue/build.js && electron-builder --dir",
     "build:clean": "cross-env BUILD_TARGET=clean node .electron-vue/build.js",
     "build:web": "cross-env BUILD_TARGET=web node .electron-vue/build.js",
@@ -24,39 +24,22 @@
   "build": {
     "productName": "InfCounter",
     "appId": "com.hlsrteam.infcounter",
-    "nsis": {
-      "oneClick": true,
-      "perMachine": true
-    },
     "directories": {
       "output": "build"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "infinitec0re",
+        "repo": "hlsr"
+      }
+    ],
+    "asar": false,
     "files": [
       "dist/electron/**/*"
     ],
-    "dmg": {
-      "contents": [
-        {
-          "x": 410,
-          "y": 150,
-          "type": "link",
-          "path": "/Applications"
-        },
-        {
-          "x": 130,
-          "y": 150,
-          "type": "file"
-        }
-      ]
-    },
-    "mac": {
-      "icon": "build/icons/icon.icns"
-    },
     "win": {
       "icon": "build/icons/icon.ico"
-    },
-    "linux": {
-      "icon": "build/icons"
     }
   },
   "dependencies": {

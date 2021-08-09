@@ -14,7 +14,7 @@
           style="color: #ff0050"
         ></i>
       </div>
-      <div class="count" id="subs-count">{{ subs }}</div>
+      <div class="count" id="subs-count" :data-target="subs">0</div>
     </div>
     <div class="line">
       <div class="hint icon">
@@ -24,7 +24,7 @@
           style="color: #1cc31c"
         ></i>
       </div>
-      <div class="count" id="likes-count">{{ likes }}</div>
+      <div class="count" id="likes-count" :data-target="likes">0</div>
     </div>
     <div class="line">
       <div class="hint icon">
@@ -34,7 +34,7 @@
           style="color: #0087ff"
         ></i>
       </div>
-      <div class="count" id="views-count">{{ viewers }}</div>
+      <div class="count" id="views-count" :data-target="viewers">0</div>
     </div>
   </div>
 </template>
@@ -50,6 +50,9 @@ export default {
     viewers: 0,
     interval: null,
     failedStreamCheck: true,
+    animations: {
+      animatedTime: 1500,
+    },
   }),
   computed: {
     hasAuthData() {
@@ -67,6 +70,82 @@ export default {
     numberWithCommas(x) {
       return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     },
+    animateValue(elem, current, target, stepTime, range) {
+      const time = this.animations.animatedTime;
+
+      let startTime = Date.now();
+      let initial = current;
+      let direction = target < current ? -1 : 1;
+
+      let intervalID = setInterval(() => {
+        current =
+          initial + ((Date.now() - startTime) / time) * range * direction;
+        elem.innerHTML = this.numberWithCommas(Math.round(current));
+
+        if (
+          (current >= target && direction > 0) ||
+          (current <= target && direction < 0)
+        ) {
+          elem.innerHTML = this.numberWithCommas(target);
+          clearInterval(intervalID);
+        }
+      }, stepTime);
+    },
+    animate() {
+      const time = this.animations.animatedTime;
+
+      let elems = document.querySelectorAll("*[data-target]");
+      elems.forEach((elem) => {
+        let hasTarget = elem.hasAttribute("data-target");
+
+        if (hasTarget) {
+          let target = parseInt(elem.getAttribute("data-target"));
+          let current = parseInt(elem.innerHTML.replace(/,/g, ""));
+
+          if (!isNaN(target) && !isNaN(current)) {
+            if (target != current) {
+              const range =
+                Math.max(current, target) - Math.min(current, target);
+              const stepTime = time / range;
+
+              this.animateValue(elem, current, target, stepTime, range);
+            }
+          }
+        }
+      });
+    },
+    _updateSubs() {
+      fetch("https://www.youtube.com/watch?v=" + localStorage.getItem("id"))
+        .then((a) => {
+          return a.text();
+        })
+        .then((data) => {
+          try {
+            this.likes = data
+              .match(
+                /"LIKE"},"defaultText":{"accessibility":{"accessibilityData":{"label":"(.*?)"/
+              )[0]
+              .match(/\d/g)
+              .join("");
+            this.viewers = data
+              .match(
+                /({"viewCount":{"runs":\[{"text":"(.*?)"},{"text":"(.*?)"})/
+              )[3]
+              .match(/\d/g)
+              .join("");
+
+            this.failedStreamCheck = false;
+
+            this.$nextTick(() => {
+              this.animate();
+            });
+          } catch (e) {
+            this.likes = 0;
+            this.viewers = 0;
+            this.failedStreamCheck = true;
+          }
+        });
+    },
     updateData() {
       this.$parent
         .getSubsCount()
@@ -74,41 +153,15 @@ export default {
           let subs =
             json.results[0].value.getCards.cards[0]
               .cumulativeSubscribersCardData.lifetimeTotal;
+
           ipcRenderer.send("update-subs", subs);
 
-          this.subs = this.numberWithCommas(subs);
-          fetch("https://www.youtube.com/watch?v=" + localStorage.getItem("id"))
-            .then((a) => {
-              return a.text();
-            })
-            .then((data) => {
-              try {
-                this.likes = this.numberWithCommas(
-                  data
-                    .match(
-                      /"LIKE"},"defaultText":{"accessibility":{"accessibilityData":{"label":"(.*?)"/
-                    )[0]
-                    .match(/\d/g)
-                    .join("")
-                );
-                this.viewers = this.numberWithCommas(
-                  data
-                    .match(
-                      /({"viewCount":{"runs":\[{"text":"(.*?)"},{"text":"(.*?)"})/
-                    )[3]
-                    .match(/\d/g)
-                    .join("")
-                );
-                this.failedStreamCheck = false;
-              } catch (e) {
-                this.likes = 0;
-                this.viewers = 0;
-                this.failedStreamCheck = true;
-              }
-            });
+          this.subs = subs;
+          this._updateSubs();
         })
         .catch((err) => {
           console.log(err);
+          this._updateSubs();
         });
     },
   },
@@ -167,8 +220,8 @@ export default {
   opacity: 0;
   transform: translateX(64px);
   position: absolute;
-  right: 8px;
-  bottom: 8px;
+  right: 12px;
+  bottom: 12px;
   width: 32px;
   height: 32px;
   background: rgba(255, 255, 255, 0.1);

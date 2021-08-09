@@ -1,6 +1,9 @@
 <template>
-  <div id="app" :class="{ light: light == 'true' }">
+  <div id="app" :class="{ light: light == 'true', focused }">
     <div id="frame">
+      <div class="status" v-if="newUpdate" :title="updateHint">
+        &#xE72C;
+      </div>
       <div class="frame-button" @click="hide">&#xE921;</div>
       <div class="frame-button" @click="close" name="close">&#xE8BB;</div>
     </div>
@@ -21,6 +24,8 @@ export default {
     light: localStorage.getItem("lightMode"),
     subsAuth: null,
     focused: true,
+    newUpdate: true,
+    updateHint: "Проверка наличия обновлений",
   }),
   methods: {
     checkTheme() {
@@ -61,16 +66,25 @@ export default {
     checkForUpdates() {
       ipcRenderer.send("check-updates");
 
-      // ipcRenderer.on("no-updates", () => {
-      //   // alert("No new updates detected");
-      //   ipcRenderer.removeAllListeners();
-      // });
+      ipcRenderer.on("no-updates", () => {
+        this.newUpdate = false;
+      });
 
-      // ipcRenderer.on("new-update", () => {
-      //   // alert("New update detected!");
-      //   ipcRenderer.removeAllListeners();
-      // });
+      ipcRenderer.on("new-update", () => {
+        this.newUpdate = true;
+        this.updateHint = "Загрузка нового обновления";
+      });
     },
+  },
+  beforeMount() {
+    // try to restore previous auth data
+    try {
+      let storedAuth = localStorage.getItem("subsAuth");
+      if (storedAuth != null) {
+        this.subsAuth = JSON.parse(storedAuth);
+        console.log(this.subsAuth);
+      }
+    } catch (e) {}
   },
   mounted() {
     this.checkForUpdates();
@@ -88,8 +102,14 @@ export default {
       });
 
     ipcRenderer.on("subs-auth-data", (e, data) => {
+      localStorage.setItem("subsAuth", JSON.stringify(data));
       this.subsAuth = data;
     });
+  },
+  beforeDestroy() {
+    require("electron")
+      .remote.getCurrentWindow()
+      .removeAllListeners();
   },
 };
 </script>
@@ -140,7 +160,7 @@ body {
   color: black;
 }
 #frame {
-  height: 30px;
+  min-height: 30px;
   width: 100%;
   background: transparent;
   display: flex;
@@ -148,6 +168,35 @@ body {
   font-family: "Segoe MDL2 Assets";
   -webkit-app-region: drag;
 }
+
+#app.focused #frame .status {
+  animation: spin 4s infinite linear;
+  left: 0;
+  /* transform: translateX(0); */
+}
+
+#frame .status {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: auto 0;
+  margin-right: auto;
+  margin-left: 8px;
+  -webkit-app-region: no-drag;
+  position: relative;
+  left: -32px;
+  transition: 0.2s ease;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotateZ(0deg);
+  }
+
+  100% {
+    transform: rotateZ(360deg);
+  }
+}
+
 .frame-button {
   height: 100%;
   width: 38px;

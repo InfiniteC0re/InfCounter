@@ -29,7 +29,7 @@ function createWindow() {
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true,
-      webSecurity: false
+      webSecurity: false,
     },
     autoHideMenuBar: true,
     resizable: false,
@@ -49,7 +49,7 @@ function createWindow() {
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true,
-      webSecurity: false
+      webSecurity: false,
     },
   });
 
@@ -57,8 +57,7 @@ function createWindow() {
   studioWindow.loadURL(
     "https://studio.youtube.com/channel/CHANNEL_ID/analytics/tab-overview/period-default",
     {
-      userAgent:
-        "Chrome",
+      userAgent: "Chrome",
     }
   );
 
@@ -118,7 +117,6 @@ function createWindow() {
 
       autoUpdater.on("update-available", () => {
         event.reply("new-update");
-        autoUpdater.removeAllListeners();
       });
 
       autoUpdater.on("download-progress", (e) => {
@@ -127,6 +125,7 @@ function createWindow() {
 
       autoUpdater.on("update-downloaded", () => {
         autoUpdater.quitAndInstall();
+        autoUpdater.removeAllListeners();
       });
     }
   });
