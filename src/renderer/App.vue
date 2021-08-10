@@ -58,7 +58,7 @@ export default {
         localStorage.getItem("brightnessStrength") || "0.7";
       let elem = this.$refs.background;
 
-      if (image != "null") {
+      if (image && image != "null") {
         this.backgroundImage = image;
         this.usesBackground = true;
 
