@@ -1,5 +1,5 @@
 <template>
-  <div id="app" :class="{ light: light == 'true', focused }">
+  <div id="app" :class="{ light: light, focused }">
     <div id="frame">
       <div class="status" v-if="newUpdate" :title="updateHint">
         &#xE72C;
@@ -7,6 +7,16 @@
       <div class="frame-button" @click="hide">&#xE921;</div>
       <div class="frame-button" @click="close" name="close">&#xE8BB;</div>
     </div>
+
+    <div
+      id="background"
+      ref="background"
+      v-show="usesBackground"
+      :style="{ backgroundImage: `url('${backgroundImage}')` }"
+    >
+      <div class="blur"></div>
+    </div>
+
     <transition name="slide" mode="out-in" class="full">
       <router-view></router-view>
     </transition>
@@ -14,8 +24,9 @@
 </template>
 
 <script>
-import { ipcRenderer } from "electron";
-const remote = require("electron").remote;
+import electron from "electron";
+import fetch from "node-fetch";
+import { ipcRenderer, remote } from "electron";
 
 export default {
   name: "infcounter",
@@ -26,10 +37,13 @@ export default {
     focused: true,
     newUpdate: true,
     updateHint: "Проверка наличия обновлений",
+    backgroundImage: "",
+    usesBackground: false,
   }),
   methods: {
     checkTheme() {
-      this.light = localStorage.getItem("lightMode");
+      this.light =
+        localStorage.getItem("lightMode") == "true" && !this.usesBackground;
     },
     close() {
       this.w.close();
@@ -37,30 +51,41 @@ export default {
     hide() {
       this.w.minimize();
     },
+    setBackground() {
+      let image = localStorage.getItem("backgroundImage");
+      let blurStrength = localStorage.getItem("blurStrength") || "12";
+      let brightnessStrength =
+        localStorage.getItem("brightnessStrength") || "0.7";
+      let elem = this.$refs.background;
+
+      if (image != "null") {
+        this.backgroundImage = image;
+        this.usesBackground = true;
+
+        elem.style.filter = `brightness(${brightnessStrength})`;
+        elem.querySelector(
+          ".blur"
+        ).style.backdropFilter = `blur(${blurStrength}px)`;
+      } else this.usesBackground = false;
+
+      this.checkTheme();
+    },
     getSubsCount() {
       return new Promise((resolve, reject) => {
-        if (this.subsAuth) {
-          require("node-fetch")(
-            "https://studio.youtube.com/youtubei/v1/analytics_data/join?alt=json&key=AIzaSyBUPetSUmoZL-OhlxA7wSac5XinrygCqMo",
-            {
-              headers: this.subsAuth.header,
-              body: this.subsAuth.body,
-              method: "POST",
-              mode: "cors",
-            }
-          )
-            .then((res) => {
-              return res.json();
-            })
-            .then((json) => {
-              resolve(json);
-            })
-            .catch((err) => {
-              reject(err);
-            });
-        } else {
-          reject("no auth data");
-        }
+        if (!this.subsAuth) return reject("no auth data");
+
+        fetch(
+          "https://studio.youtube.com/youtubei/v1/analytics_data/join?alt=json&key=AIzaSyBUPetSUmoZL-OhlxA7wSac5XinrygCqMo",
+          {
+            headers: this.subsAuth.header,
+            body: this.subsAuth.body,
+            method: "POST",
+            mode: "cors",
+          }
+        )
+          .then((res) => res.json())
+          .then((json) => resolve(json))
+          .catch((err) => reject(err));
       });
     },
     checkForUpdates() {
@@ -82,24 +107,22 @@ export default {
       let storedAuth = localStorage.getItem("subsAuth");
       if (storedAuth != null) {
         this.subsAuth = JSON.parse(storedAuth);
-        console.log(this.subsAuth);
       }
     } catch (e) {}
   },
   mounted() {
     this.checkForUpdates();
+    this.setBackground();
 
-    require("electron")
-      .remote.getCurrentWindow()
-      .on("focus", () => {
-        this.focused = true;
-      });
+    remote.getCurrentWindow().on("focus", () => {
+      if (remote.getCurrentWindow().isDestroyed()) return;
+      this.focused = true;
+    });
 
-    require("electron")
-      .remote.getCurrentWindow()
-      .on("blur", () => {
-        this.focused = false;
-      });
+    remote.getCurrentWindow().on("blur", () => {
+      if (remote.getCurrentWindow().isDestroyed()) return;
+      this.focused = false;
+    });
 
     ipcRenderer.on("subs-auth-data", (e, data) => {
       localStorage.setItem("subsAuth", JSON.stringify(data));
@@ -107,9 +130,7 @@ export default {
     });
   },
   beforeDestroy() {
-    require("electron")
-      .remote.getCurrentWindow()
-      .removeAllListeners();
+    remote.getCurrentWindow().removeAllListeners();
   },
 };
 </script>
@@ -141,7 +162,8 @@ body {
   background: rgba(0, 0, 0, 0.2);
   color: rgba(0, 0, 0, 0.6);
 }
-#app.light input[type="text"] {
+#app.light input[type="text"],
+#app.light input[type="number"] {
   box-shadow: inset 0px 0px 0px 2px black;
   color: black;
 }
@@ -159,6 +181,7 @@ body {
   background: rgba(0, 0, 0, 0.2);
   color: black;
 }
+
 #frame {
   min-height: 30px;
   width: 100%;
@@ -167,12 +190,11 @@ body {
   justify-content: flex-end;
   font-family: "Segoe MDL2 Assets";
   -webkit-app-region: drag;
+  z-index: 9;
 }
 
 #app.focused #frame .status {
   animation: spin 4s infinite linear;
-  left: 0;
-  /* transform: translateX(0); */
 }
 
 #frame .status {
@@ -185,6 +207,30 @@ body {
   position: relative;
   left: -32px;
   transition: 0.2s ease;
+}
+
+#background {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
+  background-position: center;
+  background-size: cover;
+  filter: brightness(0.7);
+  transition: 0.2s ease;
+  pointer-events: none;
+}
+
+#background .blur {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  transition: 0.2s ease;
+  backdrop-filter: blur(16px);
 }
 
 @keyframes spin {
@@ -203,7 +249,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  color: #4f84c7;
+  color: #59a2ff;
   font-size: 12px;
   transition: 0.2s all;
   -webkit-app-region: no-drag;

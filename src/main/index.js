@@ -99,9 +99,7 @@ function createWindow() {
 
             mainWindow.webContents.send("subs-auth-data", getSubsDetails);
           })
-          .catch((error) => {
-            console.log(error);
-          });
+          .catch((error) => console.log(error));
       }
     }
   );

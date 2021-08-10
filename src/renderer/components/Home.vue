@@ -1,9 +1,6 @@
 <template>
-  <div id="wrapper">
-    <div
-      :class="{ 'prefs-button': true, showed: focused }"
-      @click="openSettings"
-    >
+  <div id="wrapper" :class="{ shadows }">
+    <div :class="{ 'prefs-button': true }" @click="openSettings">
       <i class="fas fa-cog"></i>
     </div>
     <div class="line">
@@ -50,6 +47,7 @@ export default {
     viewers: 0,
     interval: null,
     failedStreamCheck: true,
+    shadows: false,
     animations: {
       animatedTime: 1500,
     },
@@ -120,6 +118,12 @@ export default {
           return a.text();
         })
         .then((data) => {
+          var showNewValues = () => {
+            this.$nextTick(() => {
+              this.animate();
+            });
+          };
+
           try {
             this.likes = data
               .match(
@@ -135,14 +139,12 @@ export default {
               .join("");
 
             this.failedStreamCheck = false;
-
-            this.$nextTick(() => {
-              this.animate();
-            });
+            showNewValues();
           } catch (e) {
             this.likes = 0;
             this.viewers = 0;
             this.failedStreamCheck = true;
+            showNewValues();
           }
         });
     },
@@ -160,7 +162,6 @@ export default {
           this._updateSubs();
         })
         .catch((err) => {
-          console.log(err);
           this._updateSubs();
         });
     },
@@ -172,6 +173,7 @@ export default {
       this.updateData();
     }, 10000);
 
+    this.shadows = localStorage.getItem("useShadows") == "true";
     this.$parent.checkTheme();
   },
   beforeDestroy() {
@@ -180,7 +182,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 #wrapper {
   position: relative;
   flex: 1;
@@ -189,11 +191,17 @@ export default {
   justify-content: space-around;
   padding: 6px 0;
 }
+
+#wrapper.shadows {
+  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.3));
+}
+
 .icon {
   width: 26px;
   justify-content: center !important;
   align-items: center !important;
 }
+
 .hint {
   color: rgb(140, 140, 140);
   margin-left: 4px;
@@ -202,20 +210,24 @@ export default {
   justify-content: flex-start;
   align-items: center;
 }
+
 .count {
   font-size: 30px;
   margin-left: 8px;
   color: white;
 }
+
 .fas {
   font-size: 18px;
   transition: 0.2s color ease;
 }
+
 .line {
   display: flex;
   align-items: center;
   margin: 0 8px;
 }
+
 .prefs-button {
   opacity: 0;
   transform: translateX(64px);
@@ -233,12 +245,13 @@ export default {
   cursor: pointer;
   transition: 0.1s background, 0.1s color, 0.3s opacity, 0.3s transform;
 }
+
 .prefs-button:hover {
   background: rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.6);
 }
 
-.showed {
+*.focused .prefs-button {
   transform: translateX(0px);
   opacity: 1;
 }

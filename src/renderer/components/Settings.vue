@@ -1,79 +1,90 @@
 <template>
   <div id="wrapper">
-    <div class="hint">ID трансляции:</div>
+    <p class="hint">ID трансляции</p>
     <div class="line" style="margin-left: 0">
       <input
+        spellcheck="false"
         placeholder="95mM72TaFsc"
         type="text"
-        style="margin-left: 0;"
         v-model="id"
       />
     </div>
-    <div style="display:flex;align-items:center;margin: 3px 0;">
-      <input type="checkbox" id="lightmode" :checked="lightMode" />
+    <div style="display:flex;align-items:center;margin:auto 0;">
+      <input
+        type="checkbox"
+        :disabled="disableLightmode"
+        id="lightmode"
+        v-model="lightMode"
+      />
       <label for="lightmode">Светлая тема</label>
-    </div>
-    <div style="display:flex; margin-top: 0px">
+
       <input
-        type="button"
-        style="margin-right: 2px;margin-top: 0"
-        @click="widget"
-        value="OBS"
+        type="checkbox"
+        id="shadows"
+        v-model="useShadows"
+        style="margin: 0 0 0 12px"
       />
-      <input
-        type="button"
-        style="margin-left: 2px;margin-top: 0"
-        @click="yt"
-        value="Студия"
-      />
+      <label for="shadows" style="margin: 2px 0 0 4px">Тени</label>
     </div>
-    <input type="button" @click="save" value="Сохранить" />
+    <div class="grid3">
+      <input type="button" @click="showWidget" value="OBS" />
+      <input type="button" @click="showStudio" value="Студия" />
+      <input type="button" @click="openBackgroundSettings" value="Фон" />
+      <input type="button" class="stretched3" @click="save" value="Сохранить" />
+    </div>
   </div>
 </template>
 
 <script>
-import { ipcRenderer } from "electron";
+import { ipcRenderer, remote } from "electron";
 
 export default {
   name: "settings",
   data: () => ({
-    id: null,
+    id: localStorage.getItem("id") || "",
     lightMode: localStorage.getItem("lightMode") == "true",
+    useShadows: localStorage.getItem("useShadows") == "true",
+    disableLightmode: true,
   }),
   methods: {
-    save() {
+    save(redirect = true) {
       localStorage.setItem("id", this.id);
-      localStorage.setItem(
-        "lightMode",
-        document.querySelector("#lightmode").checked
-      );
+      localStorage.setItem("lightMode", this.lightMode);
+      localStorage.setItem("useShadows", this.useShadows);
 
-      let router = this.$router;
-      router.push({ path: "/" });
+      if (redirect) this.$router.push({ path: "/" });
     },
-    yt() {
+    showStudio() {
       ipcRenderer.send("show-studio");
     },
-    widget() {
-      require("electron").remote.shell.openExternal("http://127.0.0.1:3000");
+    showWidget() {
+      remote.shell.openExternal("http://127.0.0.1:3000");
+    },
+    openBackgroundSettings() {
+      this.save(false);
+      this.$router.push({ path: "/background" });
     },
   },
   mounted() {
-    this.id = localStorage.getItem("id") || "";
+    this.disableLightmode = this.$parent.usesBackground;
   },
 };
 </script>
 
 <style scoped>
 #wrapper {
-  padding: 0 8px;
-  margin: 8px 0;
-  height: 138px;
+  --border-color: rgba(255, 255, 255, 1);
+  --hover-color: rgba(255, 255, 255, 0.1);
+  padding: 8px;
+  z-index: 9;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 .hint {
   color: rgb(140, 140, 140);
   font-size: 10px;
-  margin-top: 6px;
+  margin: 0 0 2px 4px;
 }
 .count {
   font-size: 30px;
@@ -87,15 +98,14 @@ export default {
   height: 26px;
   background: white;
   border-radius: 2px;
-  box-shadow: inset 0px 0px 0px 2px white;
+  box-shadow: inset 0px 0px 0px 2px var(--border-color);
 }
 input[type="text"] {
   width: 100%;
-  margin-left: 6px;
   border: none;
   outline: none;
   background: transparent;
-  box-shadow: inset 0px 0px 0px 2px white;
+  box-shadow: inset 0px 0px 0px 2px var(--border-color);
   color: white;
   padding: 6px;
   border-radius: 4px;
@@ -103,7 +113,6 @@ input[type="text"] {
   font-size: 11px;
 }
 .line {
-  margin-top: 4px;
   margin-left: 6px;
   display: flex;
   width: 100%;
@@ -115,21 +124,29 @@ input[type="button"] {
   border: none;
   outline: none;
   border-radius: 2px;
-  margin-top: 6px;
-  box-shadow: inset 0px 0px 0px 2px white;
+  box-shadow: inset 0px 0px 0px 2px var(--border-color);
   background: transparent;
   color: white;
   cursor: pointer;
   font-size: 11px;
   transition: 0.1s background;
 }
+input[type="button"].stretched3 {
+  grid-column-start: 1;
+  grid-column-end: 4;
+}
 input[type="button"]:hover {
-  background: rgb(60, 60, 60);
+  background: var(--hover-color);
 }
 label {
   font-size: 11px;
   color: white;
   margin-left: 2px;
   margin-top: 2px;
+}
+.grid3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
 }
 </style>

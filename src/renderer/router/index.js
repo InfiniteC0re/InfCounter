@@ -1,19 +1,24 @@
-import Vue from 'vue'
-import Router from 'vue-router'
+import Vue from "vue";
+import Router from "vue-router";
 
-Vue.use(Router)
+Vue.use(Router);
 
 export default new Router({
   routes: [
     {
-      path: '/',
-      name: 'home',
-      component: require('@/components/Home').default
+      path: "/",
+      name: "home",
+      component: require("@/components/Home").default,
     },
     {
-      path: '/settings',
-      name: 'settings',
-      component: require("@/components/Settings").default
-    }
-  ]
-})
+      path: "/settings",
+      name: "settings",
+      component: require("@/components/Settings").default,
+    },
+    {
+      path: "/background",
+      name: "background",
+      component: require("@/components/Background").default,
+    },
+  ],
+});
