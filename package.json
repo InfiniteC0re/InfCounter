@@ -35,6 +35,12 @@
       }
     ],
     "asar": true,
+    "nsis": {
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": true,
+      "oneClick": false,
+      "perMachine": true
+    },
     "files": [
       "dist/electron/**/*"
     ],
