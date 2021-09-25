@@ -60,13 +60,24 @@ export default {
       return this.$parent.focused;
     },
   },
+  watch: {
+    likes(likes, _likes) {
+      likes = parseInt(likes);
+      ipcRenderer.send("update-likes", {
+        current: likes,
+        target: likes + 100 - (likes % 100),
+      });
+    },
+  },
   methods: {
     openSettings() {
       let router = this.$router;
       router.push({ path: "/settings" });
     },
     numberWithCommas(x) {
-      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      return parseInt(x)
+        .toString()
+        .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     },
     animateValue(elem, current, target, stepTime, range) {
       const time = this.animations.animatedTime;
@@ -171,7 +182,7 @@ export default {
 
     this.interval = setInterval(() => {
       this.updateData();
-    }, 10000);
+    }, 6000);
 
     this.shadows = localStorage.getItem("useShadows") == "true";
     this.$parent.checkTheme();

@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import electron from "electron";
+
 import fetch from "node-fetch";
 import { ipcRenderer, remote } from "electron";
 

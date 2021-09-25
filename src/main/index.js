@@ -6,6 +6,7 @@ const expressapp = require("express")();
 const http = require("http").createServer(expressapp);
 const io = require("socket.io")(http);
 var subs = 0;
+var likes = { current: 0, target: 0 };
 
 if (process.env.NODE_ENV !== "development") {
   global.__static = require("path")
@@ -130,13 +131,18 @@ function createWindow() {
 
   ipcMain.on("update-subs", (e, newSubs) => {
     subs = newSubs;
-    io.emit("new_data_subs", subs);
+    io.emit("new-data-subs", subs);
+  });
+
+  ipcMain.on("update-likes", (e, newLikes) => {
+    likes = newLikes;
+    io.emit("new-data-likes", newLikes);
   });
 
   ipcMain.on("dashboard", (event, args) => {
     mainWindow.webContents.send("subs-count", args.subs);
     subs = args.subs;
-    io.emit("new_data_subs", subs);
+    io.emit("new-data-subs", subs);
   });
 
   ipcMain.on("show-studio", () => {
@@ -178,8 +184,13 @@ expressapp.get("/", function(req, res) {
   res.redirect("https://hlsr.pro/ytstats/");
 });
 
+expressapp.get("/goals/likes", function(req, res) {
+  res.redirect("https://hlsr.pro/ytstats/likes#32a0ff;7;2");
+});
+
 io.on("connection", function(socket) {
-  socket.emit("new_data_subs", subs);
+  socket.emit("new-data-subs", subs);
+  socket.emit("new-data-likes", likes);
 });
 
 http.listen(3000);

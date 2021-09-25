@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Likes Goal</title>
+    <meta charset="utf-8" />
+    <link rel="icon" href="favicon.ico" />
+    <meta
+      content="width=device-width,initial-scale=1,minimal-ui"
+      name="viewport"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic|Material+Icons"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"
+      integrity="sha256-bQmrZe4yPnQrLTY+1gYylfNMBuGfnT/HKsCGX+9Xuqo="
+      crossorigin="anonymous"
+    ></script>
+    <style>
+      @import url("https://fonts.cdnfonts.com/css/myriad-pro");
+
+      @font-face {
+        font-family: "HL2";
+        src: url(../halflife2.ttf) format("opentype");
+      }
+
+      @font-face {
+        font-family: "Intro";
+        src: url(./Intro.otf) format("opentype");
+      }
+
+      :root {
+        --theme-color: rgb(50, 160, 255);
+      }
+
+      .material-icons {
+        font-family: "Material Icons";
+        font-weight: normal;
+        font-style: normal;
+        font-size: 24px; /* Preferred icon size */
+        display: inline-block;
+        line-height: 1;
+        text-transform: none;
+        letter-spacing: normal;
+        word-wrap: normal;
+        white-space: nowrap;
+        direction: ltr;
+
+        /* Support for all WebKit browsers. */
+        -webkit-font-smoothing: antialiased;
+        /* Support for Safari and Chrome. */
+        text-rendering: optimizeLegibility;
+
+        /* Support for Firefox. */
+        -moz-osx-font-smoothing: grayscale;
+
+        /* Support for IE. */
+        font-feature-settings: "liga";
+      }
+
+      html {
+        background-color: transparent !important;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Roboto;
+        margin: 0;
+      }
+
+      #app {
+        justify-content: flex-end;
+        /* background: yellowgreen; */
+        overflow: hidden;
+      }
+
+      .odometer.odometer-auto-theme,
+      .odometer.odometer-theme-default {
+        display: -moz-inline-box;
+        -moz-box-orient: vertical;
+        display: inline-block;
+        vertical-align: middle;
+        *vertical-align: auto;
+        position: relative;
+      }
+      .odometer.odometer-auto-theme,
+      .odometer.odometer-theme-default {
+        *display: inline;
+      }
+      .odometer.odometer-auto-theme .odometer-digit,
+      .odometer.odometer-theme-default .odometer-digit {
+        display: -moz-inline-box;
+        -moz-box-orient: vertical;
+        display: inline-block;
+        vertical-align: middle;
+        *vertical-align: auto;
+        position: relative;
+      }
+      .odometer.odometer-auto-theme .odometer-digit,
+      .odometer.odometer-theme-default .odometer-digit {
+        *display: inline;
+      }
+      .odometer.odometer-auto-theme .odometer-digit .odometer-digit-spacer,
+      .odometer.odometer-theme-default .odometer-digit .odometer-digit-spacer {
+        display: -moz-inline-box;
+        -moz-box-orient: vertical;
+        display: inline-block;
+        vertical-align: middle;
+        *vertical-align: auto;
+        visibility: hidden;
+      }
+      .odometer.odometer-auto-theme .odometer-digit .odometer-digit-spacer,
+      .odometer.odometer-theme-default .odometer-digit .odometer-digit-spacer {
+        *display: inline;
+      }
+      .odometer.odometer-auto-theme .odometer-digit .odometer-digit-inner,
+      .odometer.odometer-theme-default .odometer-digit .odometer-digit-inner {
+        text-align: left;
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow: hidden;
+      }
+      .odometer.odometer-auto-theme .odometer-digit .odometer-ribbon,
+      .odometer.odometer-theme-default .odometer-digit .odometer-ribbon {
+        display: block;
+      }
+      .odometer.odometer-auto-theme .odometer-digit .odometer-ribbon-inner,
+      .odometer.odometer-theme-default .odometer-digit .odometer-ribbon-inner {
+        display: block;
+        -webkit-backface-visibility: hidden;
+      }
+      .odometer.odometer-auto-theme .odometer-digit .odometer-value,
+      .odometer.odometer-theme-default .odometer-digit .odometer-value {
+        display: block;
+        -webkit-transform: translateZ(0);
+      }
+      .odometer.odometer-auto-theme
+        .odometer-digit
+        .odometer-value.odometer-last-value,
+      .odometer.odometer-theme-default
+        .odometer-digit
+        .odometer-value.odometer-last-value {
+        position: absolute;
+      }
+      .odometer.odometer-auto-theme.odometer-animating-up
+        .odometer-ribbon-inner,
+      .odometer.odometer-theme-default.odometer-animating-up
+        .odometer-ribbon-inner {
+        -webkit-transition: -webkit-transform 2s;
+        -moz-transition: -moz-transform 2s;
+        -ms-transition: -ms-transform 2s;
+        -o-transition: -o-transform 2s;
+        transition: transform 2s;
+      }
+      .odometer.odometer-auto-theme.odometer-animating-up.odometer-animating
+        .odometer-ribbon-inner,
+      .odometer.odometer-theme-default.odometer-animating-up.odometer-animating
+        .odometer-ribbon-inner {
+        -webkit-transform: translateY(-100%);
+        -moz-transform: translateY(-100%);
+        -ms-transform: translateY(-100%);
+        -o-transform: translateY(-100%);
+        transform: translateY(-100%);
+      }
+      .odometer.odometer-auto-theme.odometer-animating-down
+        .odometer-ribbon-inner,
+      .odometer.odometer-theme-default.odometer-animating-down
+        .odometer-ribbon-inner {
+        -webkit-transform: translateY(-100%);
+        -moz-transform: translateY(-100%);
+        -ms-transform: translateY(-100%);
+        -o-transform: translateY(-100%);
+        transform: translateY(-100%);
+      }
+      .odometer.odometer-auto-theme.odometer-animating-down.odometer-animating
+        .odometer-ribbon-inner,
+      .odometer.odometer-theme-default.odometer-animating-down.odometer-animating
+        .odometer-ribbon-inner {
+        -webkit-transition: -webkit-transform 2s;
+        -moz-transition: -moz-transform 2s;
+        -ms-transition: -ms-transform 2s;
+        -o-transition: -o-transform 2s;
+        transition: transform 2s;
+        -webkit-transform: translateY(0);
+        -moz-transform: translateY(0);
+        -ms-transform: translateY(0);
+        -o-transform: translateY(0);
+        transform: translateY(0);
+      }
+
+      .odometer.odometer-auto-theme .odometer-value,
+      .odometer.odometer-theme-default .odometer-value {
+        text-align: center;
+      }
+
+      .goal-container {
+        display: flex;
+        align-items: center;
+        padding: 6px 16px;
+        padding-right: 8px;
+        border-radius: 12px 0 0 12px;
+        width: fit-content;
+        box-shadow: 0 4px rgba(0, 0, 0, 0.4);
+        margin: 16px;
+        margin-right: 0;
+        height: 45px;
+        background: #fff;
+        position: relative;
+        transform: translateX(100%);
+      }
+
+      .goal-container.show {
+        animation: appear 1s ease forwards alternate;
+      }
+
+      .goal-container.hide {
+        animation: appear 1s ease forwards alternate-reverse;
+      }
+
+      .goal-container .icon {
+        height: 45px;
+        width: 45px;
+        border-radius: 50%;
+        background: var(--theme-color);
+        box-shadow: 0 2px rgb(0 0 0 / 40%);
+        transform: scale(1.25);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+        margin-right: 12px;
+      }
+
+      .icon .shine {
+        animation: shine 12s ease-in-out infinite;
+        animation-fill-mode: forwards;
+        position: absolute;
+        top: -110%;
+        left: -210%;
+        width: 200%;
+        height: 200%;
+        opacity: 0;
+        transform: rotate(30deg);
+
+        background: rgba(255, 255, 255, 0.13);
+        background: linear-gradient(
+          to right,
+          rgba(255, 255, 255, 0.13) 0%,
+          rgba(255, 255, 255, 0.13) 77%,
+          rgba(255, 255, 255, 0.5) 92%,
+          rgba(255, 255, 255, 0) 100%
+        );
+      }
+
+      @keyframes shine {
+        10% {
+          opacity: 1;
+          top: -30%;
+          left: -30%;
+          transition-property: left, top, opacity;
+          transition-duration: 0.7s, 0.7s, 0.15s;
+          transition-timing-function: ease;
+        }
+        100% {
+          opacity: 0;
+          top: -30%;
+          left: -30%;
+          transition-property: left, top, opacity;
+        }
+      }
+
+      .goal-title {
+        font-weight: bold;
+        margin: 0;
+        line-height: 12px;
+        font-family: "Intro", sans-serif;
+        font-size: 0.9rem;
+        margin-right: 8px;
+      }
+
+      .blue-text {
+        color: var(--theme-color);
+        font-weight: bold;
+        font-family: "Intro", sans-serif;
+      }
+
+      .slash {
+        margin: 0 2px;
+        position: relative;
+        top: 3px;
+      }
+
+      #likes-target {
+        letter-spacing: -1.2px;
+      }
+
+      .counter {
+        font-size: 2rem;
+        line-height: 30px;
+        position: relative;
+        font-weight: 600;
+        font-family: "Myriad Pro", sans-serif;
+        display: flex;
+        top: 2px;
+      }
+
+      @keyframes appear {
+        0% {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+
+        100% {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app" style="display: none">
+      <div class="goal-container" ref="goal">
+        <div class="icon">
+          <div class="shine"></div>
+          <span class="material-icons" id="like-icon"> thumb_up</span>
+        </div>
+        <h3 class="goal-title">Цель<br />Стрима</h3>
+        <div class="counter">
+          <div class="likes-count">
+            <span id="likes-current" class="blue-text">{{likes.current}}</span>
+          </div>
+          <span class="slash">/</span><span id="likes-target"></span>
+        </div>
+      </div>
+    </div>
+    <script src="https://unpkg.com/vue"></script>
+    <script src="http://github.hubspot.com/odometer/odometer.js"></script>
+    <script>
+      new Vue({
+        el: "#app",
+        data: () => ({
+          likes: {
+            current: 0,
+            target: 0,
+          },
+          timeout: null,
+          shown: false,
+          waveCount: 0,
+          reopenTimeout: 7
+        }),
+        mounted() {
+          document.querySelector("#app").style.display = "flex";
+
+          let levelSize = 2;
+
+          // получение настроек
+          let urlArgs = window.location.href.split("#");
+          if (urlArgs.length > 1) {
+            urlArgs = urlArgs[1].split(";");
+
+            if (urlArgs.length >= 1) {
+              document.documentElement.style.setProperty(
+                "--theme-color",
+                `#${urlArgs[0]}`
+              );
+
+              if (urlArgs.length >= 2) {
+                this.reopenTimeout = parseFloat(urlArgs[1]);
+
+                if (urlArgs.length >= 3) levelSize = parseInt(urlArgs[2]);
+              }
+            }
+          }
+
+          let likesCurrentElement = document.querySelector("#likes-current");
+          let likesTargetElement = document.querySelector("#likes-target");
+
+          new Odometer({
+            el: likesCurrentElement,
+            value: 0,
+            format: "(,ddd)",
+            theme: "default",
+          });
+
+          new Odometer({
+            el: likesTargetElement,
+            value: 0,
+            format: "(,ddd)",
+            theme: "default",
+          });
+
+          var socket = io("http://127.0.0.1:3000");
+
+          socket.on("new-data-likes", (data) => {
+            likesCurrentElement.innerHTML = data.current;
+            likesTargetElement.innerHTML = data.target;
+
+            console.log(data);
+
+            if (this.timeout == null) {
+              // первый запуск
+              this.animateGoal(true);
+              this.setHideDelay();
+            } else if (this.shown) {
+              let difference = data.current - this.likes.current;
+
+              this.waveCount += difference;
+              console.log(difference, this.waveCount);
+
+              if (this.waveCount >= levelSize) {
+                console.log("Сброс таймера скрытия");
+                this.makeAnimation(
+                  document.querySelector("#like-icon"),
+                  [
+                    { transform: "rotateY(0deg)" },
+                    { transform: "rotateY(360deg)" },
+                  ],
+                  1500
+                );
+                this.setHideDelay();
+                this.waveCount = this.waveCount % levelSize; // удалить обработанные levelSize лайков со счёта волны
+              }
+            }
+
+            this.likes = data;
+          });
+        },
+        methods: {
+          setHideDelay() {
+            if (this.timeout != null) clearTimeout(this.timeout);
+
+            this.timeout = setTimeout(() => {
+              this.animateGoal(false);
+            }, 40 * 1000);
+          },
+          makeAnimation(elem, keyframes, duration = 1000, fill = "forwards") {
+            new Animation(
+              new KeyframeEffect(elem, keyframes, {
+                duration,
+                fill,
+                direction: "alternate",
+                easing: "ease",
+              }),
+              document.timeline
+            ).play();
+          },
+          animateGoal(show = true) {
+            if (this.shown == show) return;
+            this.shown = show;
+
+            let keyframes = [
+              { transform: "translateX(100%)", opacity: "0" },
+              { transform: "translateX(0)", opacity: "1" },
+            ];
+
+            if (!show) {
+              this.waveCount = 0;
+              keyframes.reverse();
+
+              setTimeout(() => {
+                this.animateGoal(true);
+                this.setHideDelay();
+              }, this.reopenTimeout * 60 * 1000);
+            }
+
+            this.makeAnimation(this.$refs.goal, keyframes);
+          },
+        },
+      });
+    </script>
+  </body>
+</html>

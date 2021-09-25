@@ -9,7 +9,7 @@
         v-model="id"
       />
     </div>
-    <div style="display:flex;align-items:center;margin:auto 0;">
+    <div style="display:flex;align-items:center;margin-top:6px">
       <input
         type="checkbox"
         :disabled="disableLightmode"
@@ -26,11 +26,17 @@
       />
       <label for="shadows" style="margin: 2px 0 0 4px">Тени</label>
     </div>
-    <div class="grid3">
-      <input type="button" @click="showWidget" value="OBS" />
-      <input type="button" @click="showStudio" value="Студия" />
-      <input type="button" @click="openBackgroundSettings" value="Фон" />
-      <input type="button" class="stretched3" @click="save" value="Сохранить" />
+    <div class="buttons">
+      <input type="button" @click="showSubsWidget" value="Сабы" />
+      <input type="button" @click="showLikesWidget" value="Лайки" />
+      <input type="button" @click="showStudio" value="YT" />
+      <input type="button" @click="openBackgroundSettings" value="UI" />
+      <input
+        type="button"
+        style="flex-basis: 100%"
+        @click="save"
+        value="Сохранить"
+      />
     </div>
   </div>
 </template>
@@ -57,8 +63,11 @@ export default {
     showStudio() {
       ipcRenderer.send("show-studio");
     },
-    showWidget() {
-      remote.shell.openExternal("http://127.0.0.1:3000");
+    showSubsWidget() {
+      remote.shell.openExternal("https://hlsr.pro/ytstats/");
+    },
+    showLikesWidget() {
+      remote.shell.openExternal("https://hlsr.pro/ytstats/likes/#32a0ff;7;50");
     },
     openBackgroundSettings() {
       this.save(false);
@@ -101,7 +110,7 @@ export default {
   box-shadow: inset 0px 0px 0px 2px var(--border-color);
 }
 input[type="text"] {
-  width: 100%;
+  flex: 1;
   border: none;
   outline: none;
   background: transparent;
@@ -119,7 +128,7 @@ input[type="text"] {
 }
 input[type="button"] {
   font-family: "Fira Sans";
-  width: 100%;
+  flex: 1;
   height: 22px;
   border: none;
   outline: none;
@@ -144,9 +153,10 @@ label {
   margin-left: 2px;
   margin-top: 2px;
 }
-.grid3 {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+.buttons {
+  display: flex;
   gap: 4px;
+  flex-wrap: wrap;
+  margin-top: auto;
 }
 </style>
