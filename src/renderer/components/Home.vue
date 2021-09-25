@@ -137,11 +137,9 @@ export default {
 
           try {
             this.likes = data
-              .match(
-                /"LIKE"},"defaultText":{"accessibility":{"accessibilityData":{"label":"(.*?)"/
-              )[0]
-              .match(/\d/g)
-              .join("");
+              .match(/(?<likes>[0-9 ]+) \/ (?<dislikes>[0-9 ]+)/)
+              .groups.likes.replace(/ /g, "");
+
             this.viewers = data
               .match(
                 /({"viewCount":{"runs":\[{"text":"(.*?)"},{"text":"(.*?)"})/
