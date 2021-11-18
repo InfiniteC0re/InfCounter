@@ -136,9 +136,21 @@ export default {
           };
 
           try {
-            this.likes = data
-              .match(/(?<likes>[0-9 ]+) \/ (?<dislikes>[0-9 ]+)/)
-              .groups.likes.replace(/ /g, "");
+            let likesMethod1 = data.match(
+              /(?<likes>[0-9 ]+) \/ (?<dislikes>[0-9 ]+)/
+            );
+
+            if (likesMethod1) {
+              this.likes = likesMethod1.groups.likes.replace(/ /g, "");
+            } else {
+              let likesMethod2 = data.match(
+                /("defaultText":{"accessibility":{"accessibilityData":{"label":")(?<likes>[\d ]*)/
+              );
+
+              if (likesMethod2)
+                this.likes = likesMethod2.groups.likes.replace(/ /g, "");
+              else this.likes = 0;
+            }
 
             this.viewers = data
               .match(
