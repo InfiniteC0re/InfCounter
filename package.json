@@ -54,7 +54,7 @@
     "electron-updater": "^4.3.4",
     "express": "^4.17.1",
     "node-fetch": "^2.6.1",
-    "socket.io": "^2.3.0",
+    "socket.io": "^2.5.0",
     "utf-8-validate": "^5.0.2",
     "vue": "^2.5.16",
     "vue-electron": "^1.0.6",
